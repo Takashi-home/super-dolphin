@@ -1,3 +1,12 @@
+/**
+ * _gen.mjs — レベルの生成・検証ツール（開発用）。
+ * `node _gen.mjs` で src/data/levels.js と同じ5ステージを組み立て、
+ *   ・穴は2タイル幅か / 穴・トゲ上空(ジャンプ到達域 rows6-10)に固いタイルが無いか
+ *   ・トゲ/敵は穴の縁から4列以上 / 敵とトゲは3列以上離れているか
+ * を検証し、さらに実際の Level/Player 物理で 3キャラ全員が歩きジャンプのみで
+ * 全ステージ走破できるか（CLEAR）を確認する。
+ * `EMIT=1 node _gen.mjs` で levels.js に貼れる形（theme 付き）を出力する。
+ */
 import { Level } from "./src/modules/Level.js";
 import { Player } from "./src/modules/Player.js";
 import { CHARACTERS } from "./src/data/characters.js";
@@ -94,23 +103,5 @@ if(process.env.EMIT && !bad && !fails){
     console.log("  {");console.log("    name: "+JSON.stringify(lv.name)+",");console.log("    theme: "+JSON.stringify(lv.theme)+",");console.log("    rows: [");
     for(const l of lv.lines)console.log("      "+JSON.stringify(l)+",");
     console.log("    ],");console.log("  },");
-  }
-}
-
-if(process.env.TR){
-  const lv=levels[+process.env.TR];const level=new Level({name:lv.name,rows:lv.lines});
-  console.log("spikes",[...level.spikes],"enemies",level.enemies.map(e=>Math.round(e.x)),"pits-near-start");
-  const p=new Player(noop);p.reset(level.spawn,false);const input=mkInput();const char=CHARACTERS.dolphin;let result=null;
-  for(let f=0;f<300&&!result;f++){
-    input.right=true;
-    const footRow=Math.floor((p.y+p.h+4)/T);const frontX=p.x+p.w;
-    const pitAhead=groundBelow(level,frontX-2,footRow)&&!groundBelow(level,frontX+T*0.6,footRow);
-    let en=false,sp=false;
-    for(const e of level.enemies)if(e.alive&&e.x>p.x&&e.x-frontX<T*0.7&&Math.abs(e.y-p.y)<T)en=true;
-    for(const s of level.spikes){const[c,r]=s.split(",").map(Number);const sx=c*T;if(sx>p.x&&sx-frontX<T*0.45&&sx-frontX>2&&Math.abs(r*T-p.y)<T*1.2)sp=true;}
-    const J=p.onGround&&(pitAhead||en||sp);if(J)input._j=true;
-    if(p.x>380&&p.x<620)console.log(`f=${f} x=${Math.round(p.x)} front=${Math.round(frontX)} y=${Math.round(p.y)} grnd=${p.onGround} pit=${pitAhead} en=${en} sp=${sp} J=${J}`);
-    result=p.update(level,input,char);
-    if(result){console.log("RESULT",result,"x=",Math.round(p.x));break;}
   }
 }

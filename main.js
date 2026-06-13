@@ -114,7 +114,8 @@ class Game {
     this.cameraX = 0;
     this.startTime = performance.now();
     this.state = 'PLAYING';
-    this.scene.setTheme(CHARACTERS[this.character].theme);
+    // 背景はステージのテーマで切り替える（無ければキャラのテーマ）
+    this.scene.setTheme(this.level.theme || CHARACTERS[this.character].theme);
     this.sound.startBGM();
     this.hud.showPlaying(this.players, this.character, {
       name: this.level.name, index: this.levelIndex + 1, total: LEVELS.length,

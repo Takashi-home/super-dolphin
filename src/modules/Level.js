@@ -8,6 +8,7 @@ export class Level {
   constructor(def) {
     this.tile = TILE;
     this.name = def.name || '';
+    this.theme = def.theme || '';
     const cols = Math.max(...def.rows.map((r) => r.length));
     this.cols = cols;
     this.rows = def.rows.length;
