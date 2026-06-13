@@ -7,6 +7,7 @@ import { TILE } from '../data/levels.js';
 export class Level {
   constructor(def) {
     this.tile = TILE;
+    this.name = def.name || '';
     const cols = Math.max(...def.rows.map((r) => r.length));
     this.cols = cols;
     this.rows = def.rows.length;
@@ -16,6 +17,7 @@ export class Level {
 
     this.coins = [];
     this.enemies = [];
+    this.powerups = [];
     this.spikes = new Set();
     this.breakables = new Set(); // "c,r" の生存ブロック
     this.spawn = { x: TILE, y: TILE };
@@ -30,6 +32,7 @@ export class Level {
         else if (ch === '^') this.spikes.add(`${c},${r}`);
         else if (ch === 'B') this.breakables.add(`${c},${r}`);
         else if (ch === 'E') this.enemies.push({ x: px + 4, y: py + 4, w: TILE - 8, h: TILE - 8, vx: 1.2, alive: true });
+        else if (ch === 'M') this.powerups.push({ x: px + TILE / 2, y: py + TILE / 2, taken: false });
         else if (ch === 'P') this.spawn = { x: px, y: py };
         else if (ch === 'G') this.goal = { x: px, y: py };
       }
@@ -110,6 +113,20 @@ export class Level {
       ctx.beginPath(); ctx.ellipse(x, y, 11 * pulse, 13, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ffecb3';
       ctx.beginPath(); ctx.ellipse(x - 3, y - 3, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // 進化アイテム
+    for (const pu of this.powerups) {
+      if (pu.taken) continue;
+      const x = pu.x - cameraX, y = pu.y;
+      if (x < -T || x > W + T) continue;
+      const bob = Math.sin(Date.now() / 250 + pu.x) * 4;
+      ctx.save();
+      ctx.shadowColor = '#ff7043'; ctx.shadowBlur = 16;
+      ctx.font = `${T * 0.8}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('🍄', x, y + bob);
+      ctx.restore();
     }
 
     // 敵

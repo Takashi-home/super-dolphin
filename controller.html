@@ -114,9 +114,11 @@
     let role = null, info = null, sensorsOn = false;
 
     // ── 送信 ──
+    // keepalive は使わない（毎フレーム送ると 64KB/同時数の制限に当たり、
+    // 「別コマンドを打っても反応しない」原因になる）。通常の fetch で投げ捨てる。
     function send(action, state) {
       fetch('/api/ctrl/input', {
-        method: 'POST', keepalive: true,
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, action, state }),
       }).catch(() => { setStatus('送信エラー（同じWi-Fi？）', 'err'); });
@@ -217,7 +219,8 @@
     }
 
     // ── 傾き（移動）──
-    const TILT_T = 18, TILT_N = 8;
+    // 反応を良くするため閾値を下げ、中立幅も狭める。
+    const TILT_T = 12, TILT_N = 5;
     const tiltState = { left: false, right: false };
     function setHold(action, on) {
       if (!info || !info.actions.includes(action)) return;
@@ -225,6 +228,12 @@
       tiltState[action] = on;
       send(action, on ? 'down' : 'up');
     }
+    // 取りこぼし対策：押し続けている方向を定期的に再送して状態を自己修復する。
+    setInterval(() => {
+      if (!sensorsOn || !info) return;
+      if (tiltState.left) send('left', 'down');
+      if (tiltState.right) send('right', 'down');
+    }, 700);
     window.addEventListener('deviceorientation', (e) => {
       if (!sensorsOn || !info) return;
       const g = Math.max(-90, Math.min(90, e.gamma ?? 0));
@@ -244,8 +253,12 @@
     });
 
     // ── 加速度（ジャンプ/ダッシュ/必殺）──
-    const JUMP_T = 13, SPECIAL_T = 17, SHAKE_T = 9;
-    let jumpLock = false, specialLock = false;
+    // ロックは「揺れが収まるまで」ではなく時間クールダウンにする。
+    // （移動で傾けていたり連続シェイク中は mag が下がらず、
+    //  旧ロジックだと2回目以降が永久に発火しなかった ＝「反応しない」バグ）
+    const JUMP_T = 11, SPECIAL_T = 15, SHAKE_T = 8;
+    const JUMP_CD = 320, SPECIAL_CD = 380; // ms
+    let lastJump = 0, lastSpecial = 0;
     let lastShake = 0, dashOn = false;
     let grav = { x: 0, y: 0, z: 0 };
     function startSensorLoops() {
@@ -267,19 +280,18 @@
         a = { x: (ag.x || 0) - grav.x, y: (ag.y || 0) - grav.y, z: (ag.z || 0) - grav.z };
       }
       const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+      const now = Date.now();
       const dets = info.detectors;
 
       if (dets.includes('shakeUp')) {
-        if (mag > JUMP_T && !jumpLock) { send('jump', 'tap'); jumpLock = true; flash(); }
-        else if (mag < 5) jumpLock = false;
+        if (mag > JUMP_T && now - lastJump > JUMP_CD) { send('jump', 'tap'); lastJump = now; flash(); }
       }
       if (dets.includes('flickDown')) {
-        if (mag > SPECIAL_T && !specialLock) { send('special', 'tap'); specialLock = true; flash(); }
-        else if (mag < 6) specialLock = false;
+        if (mag > SPECIAL_T && now - lastSpecial > SPECIAL_CD) { send('special', 'tap'); lastSpecial = now; flash(); }
       }
       if (dets.includes('shake')) {
         if (mag > SHAKE_T) {
-          lastShake = Date.now();
+          lastShake = now;
           if (!dashOn) { dashOn = true; send('dash', 'down'); }
         }
       }

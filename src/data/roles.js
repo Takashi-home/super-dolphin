@@ -24,7 +24,7 @@ export const ROLE_INFO = {
   },
   JUMP: {
     label: 'ジャンプ', icon: '⬆️', color: '#00c853',
-    instr: '端末を上にシュッと振る', detectors: ['shakeUp'], actions: ['jump'],
+    instr: '上にシュッと振る（走りながら連続で跳ぶと3段ジャンプ！）', detectors: ['shakeUp'], actions: ['jump'],
   },
   DASH: {
     label: 'ダッシュ', icon: '💨', color: '#ff9100',
@@ -36,6 +36,6 @@ export const ROLE_INFO = {
   },
   SPECIAL: {
     label: 'ひっさつ技', icon: '🌟', color: '#ffd600',
-    instr: '端末を下にガッと振る', detectors: ['flickDown'], actions: ['special'],
+    instr: '下にガッと振る（🔥ファイア時はファイアボール発射！）', detectors: ['flickDown'], actions: ['special'],
   },
 };

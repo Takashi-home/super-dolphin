@@ -78,6 +78,8 @@ export class SoundEngine {
   break()   { this.noise(0.18, 0.3, 900); this.beep(160, 0.18, 'square', 0.2); }
   stomp()   { this.sweep(300, 90, 0.15, 'square', 0.25); }
   special() { [523, 659, 880].forEach((f, i) => this.beep(f, 0.18, 'triangle', 0.2, i * 0.05)); }
+  fire()    { this.sweep(900, 300, 0.16, 'sawtooth', 0.18); }
+  powerup() { [392, 523, 659, 784, 1047].forEach((f, i) => this.beep(f, 0.14, 'square', 0.22, i * 0.06)); }
   miss()    { this.sweep(440, 70, 0.7, 'sawtooth', 0.3); }
 
   clear() {

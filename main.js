@@ -16,16 +16,19 @@ class Game {
     this.input = new InputHub();
     this.player = new Player(this.sound);
     this.level = null;
+    this.levelIndex = 0;
     this.players = [];          // ロビーの参加者一覧（relayから）
     this.character = 'dolphin';
     this.state = 'LOBBY';
     this.cameraX = 0;
     this.startTime = 0;
+    this._pendingNext = false;  // 次ステージへ進む待ち
+    this._finalClear = false;   // 全ステージクリア後
 
     this.hud = new Hud({
       onStart: () => this.start(),
       onSelectCharacter: (key) => this.selectCharacter(key),
-      onReset: () => this.beginPlay(),
+      onReset: () => this._advance(),
     });
 
     this._resize();
@@ -80,37 +83,65 @@ class Game {
   // ロビーの「スタート」: relay に役割割当を依頼してから開始
   start() {
     this.sound.ensureRunning();
+    this.levelIndex = 0;
     fetch('/api/ctrl/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ character: this.character }),
     }).catch(() => {});
-    this.beginPlay(); // relay が無くてもキーボードで遊べるよう即開始
+    this.beginPlay(false); // relay が無くてもキーボードで遊べるよう即開始
   }
 
-  beginPlay() {
-    this.level = new Level(LEVELS[0]);
-    this.player.reset(this.level.spawn);
+  // リザルト画面のボタン: 状況に応じて 次へ / リトライ / 最初から
+  _advance() {
+    if (this._pendingNext) {        // ステージクリア → 次へ（進化は引き継ぐ）
+      this.levelIndex++;
+      this._pendingNext = false;
+      this.beginPlay(true);
+    } else if (this._finalClear) {  // 全クリア → 最初から
+      this._finalClear = false;
+      this.levelIndex = 0;
+      this.beginPlay(false);
+    } else {                         // ミス → 同じステージをやり直し
+      this.beginPlay(false);
+    }
+  }
+
+  beginPlay(keepPower = false) {
+    this.level = new Level(LEVELS[this.levelIndex]);
+    this.player.reset(this.level.spawn, keepPower);
     this.input.reset();
     this.cameraX = 0;
     this.startTime = performance.now();
     this.state = 'PLAYING';
     this.scene.setTheme(CHARACTERS[this.character].theme);
     this.sound.startBGM();
-    this.hud.showPlaying(this.players, this.character);
+    this.hud.showPlaying(this.players, this.character, {
+      name: this.level.name, index: this.levelIndex + 1, total: LEVELS.length,
+    });
   }
 
   _win() {
     this.state = 'RESULT';
     this.sound.stopBGM();
     this.sound.clear();
-    this.hud.showResult('clear', this._stats());
+    const last = this.levelIndex >= LEVELS.length - 1;
+    this._pendingNext = !last;
+    this._finalClear = last;
+    this.hud.showResult(last ? 'allclear' : 'next', this._stats(), {
+      index: this.levelIndex + 1, total: LEVELS.length,
+      nextName: last ? null : LEVELS[this.levelIndex + 1].name,
+    });
   }
 
   _lose() {
     this.state = 'RESULT';
     this.sound.stopBGM();
-    this.hud.showResult('gameover', this._stats());
+    this._pendingNext = false;
+    this._finalClear = false;
+    this.hud.showResult('gameover', this._stats(), {
+      index: this.levelIndex + 1, total: LEVELS.length,
+    });
   }
 
   _stats() {
@@ -134,7 +165,7 @@ class Game {
     if (this.level.width < this.W) this.cameraX = 0;
 
     const st = this._stats();
-    this.hud.updateStats(st.coins, st.total, st.seconds);
+    this.hud.updateStats(st.coins, st.total, st.seconds, this.player.tier);
 
     if (ev === 'goal') this._win();
     else if (ev === 'dead') this._lose();
