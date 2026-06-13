@@ -1,0 +1,131 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #4fc3f7;
+  --bg: #06121c;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: #fff;
+  font-family: 'Hiragino Maru Gothic ProN', 'Yu Gothic', 'Segoe UI', sans-serif;
+  user-select: none;
+}
+
+#app { position: relative; width: 100vw; height: 100vh; }
+
+#game-canvas { position: absolute; inset: 0; display: block; }
+
+/* ── オーバーレイ共通 ── */
+.overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(4, 14, 24, 0.82);
+  backdrop-filter: blur(4px);
+  z-index: 20;
+}
+.overlay.hidden, .hud.hidden { display: none; }
+
+/* ── ロビー ── */
+.lobby-inner {
+  width: min(920px, 94vw);
+  text-align: center;
+  padding: 24px;
+}
+.game-title {
+  font-size: clamp(2rem, 6vw, 4rem);
+  letter-spacing: 0.04em;
+  text-shadow: 0 4px 0 #0277bd, 0 0 24px rgba(79, 195, 247, 0.6);
+}
+.subtitle { color: #b3e5fc; margin: 8px 0 18px; font-size: clamp(0.9rem, 2vw, 1.15rem); }
+
+.connect-box {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.connect-label { font-size: 0.9rem; color: #cfd8dc; }
+#connect-url {
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  font-weight: 700; color: #ffd600; word-break: break-all;
+}
+.connect-note { font-size: 0.75rem; color: #90a4ae; }
+
+.char-select h2 { font-size: 1.1rem; margin-bottom: 10px; color: #e1f5fe; }
+.char-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.char-card {
+  width: 160px; padding: 16px 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 3px solid transparent;
+  border-radius: 18px; color: #fff; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transition: transform 0.12s, border-color 0.15s, background 0.15s;
+}
+.char-card:hover { transform: translateY(-4px); background: rgba(255, 255, 255, 0.12); }
+.char-card.selected { border-color: var(--accent); background: rgba(79, 195, 247, 0.18); }
+.char-emoji { font-size: 3.2rem; line-height: 1; }
+.char-name { font-size: 1.2rem; font-weight: 700; }
+.char-skill { font-size: 0.8rem; color: #b0bec5; }
+
+.lobby-bottom {
+  margin-top: 22px; display: flex; align-items: center; gap: 20px;
+  justify-content: center; flex-wrap: wrap;
+}
+#roster {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; max-width: 560px;
+}
+#roster li {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 255, 255, 0.08); border-radius: 999px;
+  padding: 6px 12px; font-size: 0.9rem;
+}
+#roster li.empty { background: none; color: #78909c; }
+.pname { font-weight: 700; }
+.role-tag { border-radius: 999px; padding: 2px 8px; font-size: 0.75rem; color: #001; font-weight: 700; }
+.role-tag.wait { background: #455a64; color: #cfd8dc; }
+
+.start-btn {
+  font-size: 1.3rem; font-weight: 800;
+  padding: 14px 34px; border: none; border-radius: 999px;
+  background: linear-gradient(160deg, #ffca28, #ff8f00);
+  color: #3e2723; cursor: pointer;
+  box-shadow: 0 6px 0 #c56000, 0 8px 20px rgba(0,0,0,0.4);
+  transition: transform 0.1s;
+}
+.start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c56000; }
+
+/* ── ゲーム中HUD ── */
+.hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+.hud-stats {
+  position: absolute; top: 16px; left: 16px;
+  display: flex; gap: 16px; font-size: 1.5rem; font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+}
+.role-legend {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  max-width: 96vw;
+}
+.legend-char {
+  font-weight: 800; font-size: 1.1rem; align-self: center;
+  background: rgba(0,0,0,0.4); padding: 6px 12px; border-radius: 999px;
+}
+.legend-item {
+  background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 12px;
+  padding: 6px 10px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
+}
+.li-icon { font-size: 1.3rem; }
+.li-text b { margin-right: 6px; }
+
+/* ── リザルト ── */
+.result-inner { text-align: center; }
+#result-title { font-size: clamp(2.4rem, 8vw, 5rem); margin-bottom: 12px; }
+#result-title.clear { color: #ffd600; text-shadow: 0 0 30px rgba(255,214,0,0.6); }
+#result-title.gameover { color: #ff5252; }
+#result-desc { font-size: 1.2rem; color: #e1f5fe; margin-bottom: 26px; }

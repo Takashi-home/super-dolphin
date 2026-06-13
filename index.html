@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スーパードルフィン — みんなで協力アクション</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- ロビー -->
+    <div id="lobby" class="overlay">
+      <div class="lobby-inner">
+        <h1 class="game-title">🐬 スーパードルフィン</h1>
+        <p class="subtitle">みんなのスマホが1つのコマンド。力を合わせてゴールを目指せ！</p>
+
+        <div class="connect-box">
+          <span class="connect-label">📱 スマホで同じWi-Fiからアクセス：</span>
+          <code id="connect-url">controller.html</code>
+          <span class="connect-note">（証明書の警告は「続行」、コントローラーで「センサーON」）</span>
+        </div>
+
+        <div class="char-select">
+          <h2>キャラクターを選ぶ</h2>
+          <div class="char-row">
+            <button class="char-card" data-char="dolphin">
+              <span class="char-emoji">🐬</span><span class="char-name">イルカ</span>
+              <span class="char-skill">2段ジャンプ</span>
+            </button>
+            <button class="char-card" data-char="orca">
+              <span class="char-emoji">🐳</span><span class="char-name">シャチ</span>
+              <span class="char-skill">ヒップドロップ</span>
+            </button>
+            <button class="char-card" data-char="tetsujin">
+              <span class="char-emoji">🤖</span><span class="char-name">鉄人28号</span>
+              <span class="char-skill">ロケットホバー</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="lobby-bottom">
+          <ul id="roster"><li class="empty">スマホでアクセスして参加してね…</li></ul>
+          <button id="start-btn" class="start-btn">スタート</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ゲーム中HUD -->
+    <div id="hud" class="hud hidden">
+      <div class="hud-stats">
+        <span id="coins">🪙 0/0</span>
+        <span id="timer">⏱ 0:00</span>
+      </div>
+      <div id="role-legend" class="role-legend"></div>
+    </div>
+
+    <!-- リザルト -->
+    <div id="result" class="overlay hidden">
+      <div class="result-inner">
+        <h1 id="result-title">クリア</h1>
+        <p id="result-desc"></p>
+        <button id="retry-btn" class="start-btn">もう一度！</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
