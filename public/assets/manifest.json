@@ -1,0 +1,5 @@
+{
+  "_comment": "差し替え用アセットの一覧。ここに列挙したものだけ読み込む（空ならすべてプロシージャル描画/合成）。例: \"images\": [\"sprites/dolphin\"] とし public/assets/sprites/dolphin.png を置く。",
+  "images": [],
+  "audio": []
+}

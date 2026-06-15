@@ -103,13 +103,27 @@ body {
 /* ── ゲーム中HUD ── */
 .hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
 .hud-stats {
-  position: absolute; top: 16px; left: 16px; right: 16px;
-  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
-  font-size: 1.5rem; font-weight: 800;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
 }
-#stage { font-size: 1.1rem; color: #ffd600; }
-#power { font-size: 1.1rem; color: #ffab91; margin-left: auto; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(180deg, rgba(20,30,45,0.72), rgba(8,14,24,0.78));
+  border: 2px solid rgba(255,255,255,0.18);
+  border-radius: 999px; padding: 7px 16px;
+  font-size: 1.25rem; font-weight: 900;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  backdrop-filter: blur(3px);
+}
+.pill .ic { font-size: 1.25rem; line-height: 1; }
+.pill .val { letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.pill-stage { color: #ffd600; font-size: 1.05rem; border-color: rgba(255,214,0,0.45); }
+#coins { color: #ffe082; }
+#score { color: #b3e5fc; }
+.pill-lives { color: #ffcdd2; }
+.pill-power { margin-left: auto; color: #cfd8dc; }
+.pill-power.t1 { color: #80d8ff; border-color: rgba(128,216,255,0.55); box-shadow: 0 0 14px rgba(128,216,255,0.35); }
+.pill-power.t2 { color: #ff8a65; border-color: rgba(255,112,67,0.6); box-shadow: 0 0 14px rgba(255,112,67,0.4); }
 .role-legend {
   position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
   display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;

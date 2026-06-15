@@ -228,12 +228,14 @@
       tiltState[action] = on;
       send(action, on ? 'down' : 'up');
     }
-    // 取りこぼし対策：押し続けている方向を定期的に再送して状態を自己修復する。
+    // 取りこぼし＆固着対策：押し続けている入力を短い周期で再送し、
+    // 受信側の「有効期限」を更新し続ける（再送が止まれば自動で解除される）。
     setInterval(() => {
       if (!sensorsOn || !info) return;
       if (tiltState.left) send('left', 'down');
       if (tiltState.right) send('right', 'down');
-    }, 700);
+      if (typeof dashOn !== 'undefined' && dashOn) send('dash', 'down');
+    }, 220);
     window.addEventListener('deviceorientation', (e) => {
       if (!sensorsOn || !info) return;
       const g = Math.max(-90, Math.min(90, e.gamma ?? 0));

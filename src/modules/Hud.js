@@ -14,9 +14,16 @@ export class Hud {
     this.result = this.$('result');
     this.roster = this.$('roster');
     this.coinsEl = this.$('coins');
-    this.timerEl = this.$('timer');
+    this.scoreEl = this.$('score');
+    this.livesEl = this.$('lives');
     this.stageEl = this.$('stage');
     this.powerEl = this.$('power');
+    this.coinsVal = this.coinsEl?.querySelector('.val');
+    this.scoreVal = this.scoreEl?.querySelector('.val');
+    this.livesVal = this.livesEl?.querySelector('.val');
+    this.livesIc = this.livesEl?.querySelector('.ic');
+    this.powerVal = this.powerEl?.querySelector('.val');
+    this.powerIc = this.powerEl?.querySelector('.ic');
     this.legend = this.$('role-legend');
     this.connectUrl = this.$('connect-url');
     this.startBtn = this.$('start-btn');
@@ -60,11 +67,19 @@ export class Hud {
     this.result.classList.add('hidden');
   }
 
+  // ワールドマップ表示中は DOM オーバーレイを全て隠す（マップは canvas 描画）
+  showMap() {
+    this.lobby.classList.add('hidden');
+    this.hud.classList.add('hidden');
+    this.result.classList.add('hidden');
+  }
+
   showPlaying(players, charKey, stage) {
     this.lobby.classList.add('hidden');
     this.result.classList.add('hidden');
     this.hud.classList.remove('hidden');
     if (stage && this.stageEl) this.stageEl.textContent = `STAGE ${stage.index}/${stage.total}　${stage.name.replace(/^\d+\.\s*/, '')}`;
+    if (this.livesIc && CHARACTERS[charKey]) this.livesIc.textContent = CHARACTERS[charKey].emoji;
     this._renderLegend(players, charKey);
   }
 
@@ -87,41 +102,39 @@ export class Hud {
     this.legend.innerHTML = html;
   }
 
-  updateStats(coins, total, seconds, tier = 0) {
-    this.coinsEl.textContent = `🪙 ${coins}/${total}`;
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    this.timerEl.textContent = `⏱ ${m}:${String(s).padStart(2, '0')}`;
-    if (this.powerEl) {
+  updateStats({ coins = 0, score = 0, lives = 0, tier = 0 }) {
+    if (this.coinsVal) this.coinsVal.textContent = `${coins}`;
+    if (this.scoreVal) this.scoreVal.textContent = `${score}`;
+    if (this.livesVal) this.livesVal.textContent = `×${lives}`;
+    if (this.powerVal) {
       const t = TIERS[tier] || TIERS[0];
-      const icon = tier === 0 ? '○' : tier === 1 ? '🍄' : '🔥';
-      this.powerEl.textContent = `${icon} ${t.name}`;
+      this.powerVal.textContent = t.name;
+      this.powerIc.textContent = tier === 0 ? '○' : tier === 1 ? '🍄' : '🔥';
+      this.powerEl.classList.toggle('t1', tier === 1);
+      this.powerEl.classList.toggle('t2', tier === 2);
     }
   }
 
-  showResult(kind, { coins, total, seconds }, info = {}) {
+  showResult(kind, { coins = 0, score = 0, lives = 0 } = {}, info = {}) {
     this.hud.classList.add('hidden');
     this.result.classList.remove('hidden');
     const title = this.$('result-title');
     const desc = this.$('result-desc');
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    const time = `${m}:${String(s).padStart(2, '0')}`;
     if (kind === 'next') {
       title.textContent = '🏁 ステージクリア！';
       title.className = 'clear';
-      desc.textContent = `タイム ${time} ／ コイン ${coins}/${total}　つぎは「${(info.nextName || '').replace(/^\d+\.\s*/, '')}」！`;
-      this.$('retry-btn').textContent = 'つぎのステージへ →';
+      desc.textContent = `コイン ${coins}枚 ／ スコア ${score} ／ 残機 ×${lives}　つぎは「${(info.nextName || '').replace(/^\d+\.\s*/, '')}」！`;
+      this.$('retry-btn').textContent = 'ワールドマップへ →';
     } else if (kind === 'allclear') {
       title.textContent = '🎉 ぜんステージ クリア！';
       title.className = 'clear';
-      desc.textContent = `${info.total}ステージ制覇！ 最終タイム ${time}　みんなナイス連携！`;
-      this.$('retry-btn').textContent = 'もう一度 最初から';
+      desc.textContent = `${info.total}ステージ制覇！ 最終スコア ${score}　みんなナイス連携！`;
+      this.$('retry-btn').textContent = 'ワールドマップへ →';
     } else {
-      title.textContent = '💥 ミス…！';
+      title.textContent = '💥 ゲームオーバー';
       title.className = 'gameover';
-      desc.textContent = `STAGE ${info.index} で力尽きた… もう一度、息を合わせて！`;
-      this.$('retry-btn').textContent = 'このステージをやり直す';
+      desc.textContent = `スコア ${score}　残機が尽きた… もう一度ワールドマップから！`;
+      this.$('retry-btn').textContent = 'ワールドマップへ';
     }
   }
 
