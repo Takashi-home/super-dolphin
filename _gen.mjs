@@ -12,6 +12,7 @@ import { Level } from "./src/modules/Level.js";
 import { Player } from "./src/modules/Player.js";
 import { CHARACTERS } from "./src/data/characters.js";
 const T = 48;
+const noop=new Proxy({},{get:()=>()=>{}});   // 音などを無視するスタブ（genGood が早期に使う）
 function buildGround(spans, cols){const a=Array(cols).fill(" ");for(const[s,e]of spans)for(let c=s;c<=e;c++)a[c]="#";return a.join("");}
 function pitCols(spans, cols){const sset=new Set();for(const[s,e]of spans)for(let c=s;c<=e;c++)sset.add(c);const p=new Set();for(let c=0;c<cols;c++)if(!sset.has(c))p.add(c);return p;}
 function run(r,c0,str){const o=[];for(let i=0;i<str.length;i++)if(str[i]!==" ")o.push([r,c0+i,str[i]]);return o;}
@@ -182,7 +183,6 @@ for(const lv of levels){
 }
 
 function groundBelow(level,x,fr){const c=Math.floor(x/T);for(let r=fr;r<=fr+1;r++)if(level.solidKind(c,r))return true;return false;}
-const noop=new Proxy({},{get:()=>()=>{}});
 function mkInput(){return{left:false,right:false,dash:false,_j:false,_s:false,consumeJump(){const v=this._j;this._j=false;return v;},consumeSpecial(){const v=this._s;this._s=false;return v;}};}
 function play(charKey,def){
   const level=new Level(def);const p=new Player(noop);p.reset(level.spawn,false);
