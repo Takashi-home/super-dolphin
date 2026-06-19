@@ -11,9 +11,13 @@ export class WorldMap {
     this.selected = 0;
     this.unlocked = 1;      // 解放済みノード数（index < unlocked が選べる）
     this.cleared = 0;       // クリア済みノード数
+    this.dev = false;       // 開発者モード：未クリアでも全ステージ選択可
     this._cd = 0;
     this.frame = 0;
   }
+
+  // 選べるノード数（開発者モードなら全部）
+  get _selectable() { return this.dev ? this.stages.length : this.unlocked; }
 
   reset() { this.selected = 0; this.unlocked = 1; this.cleared = 0; }
 
@@ -28,7 +32,7 @@ export class WorldMap {
     this._cd = Math.max(0, this._cd - 1);
     if (this._cd === 0) {
       if (input.left && !input.right && this.selected > 0) { this.selected--; this._cd = 12; }
-      else if (input.right && !input.left && this.selected < this.unlocked - 1) { this.selected++; this._cd = 12; }
+      else if (input.right && !input.left && this.selected < this._selectable - 1) { this.selected++; this._cd = 12; }
     }
     if (input.consumeJump()) return 'enter';
     return null;
@@ -67,7 +71,7 @@ export class WorldMap {
     // ノード
     for (let i = 0; i < this.stages.length; i++) {
       const p = this._nodePos(i, W, H);
-      const locked = i >= this.unlocked;
+      const locked = !this.dev && i >= this.unlocked;
       const cleared = i < this.cleared;
       const sel = i === this.selected;
       ctx.fillStyle = locked ? '#7e96a6' : cleared ? '#ffca28' : '#ff7043';
@@ -94,6 +98,12 @@ export class WorldMap {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 5;
     ctx.font = '900 30px "Hiragino Maru Gothic ProN","Yu Gothic",sans-serif'; ctx.textAlign = 'left';
     ctx.strokeText('ワールドマップ', 26, 22); ctx.fillText('ワールドマップ', 26, 22);
+    if (this.dev) {
+      ctx.font = '900 16px sans-serif';
+      ctx.fillStyle = '#ff5252'; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 4;
+      ctx.strokeText('🛠 開発者モード：全ステージ開放中', 26, 58);
+      ctx.fillText('🛠 開発者モード：全ステージ開放中', 26, 58);
+    }
     ctx.font = '900 24px sans-serif'; ctx.textAlign = 'right';
     const stat = `★${info.score}    ×${info.lives}`;
     ctx.strokeText(stat, W - 26, 26); ctx.fillText(stat, W - 26, 26);

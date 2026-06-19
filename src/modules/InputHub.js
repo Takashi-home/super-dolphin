@@ -24,6 +24,9 @@ export class InputHub {
     // action -> Map<id, expiryMs>
     this._holds = { left: new Map(), right: new Map(), dash: new Map() };
     this._keyHeld = { left: false, right: false, dash: false };
+
+    // デバッグ計測：どの端末(id)から何の入力が来たか・最後にいつ来たか
+    this.dbg = { byId: new Map(), lastJump: 0, lastSpecial: 0 };
     this.HOLD_MS = 550;   // down の有効期間（コントローラーの再送間隔 < これ）
     this.TAP_MS = 160;    // タップ（jump/special を hold に使う場合用）
 
@@ -32,8 +35,9 @@ export class InputHub {
 
   // SSE からの入力を反映（id 単位で保持期限を更新）
   applyRemote(id, action, state) {
-    if (action === 'jump') { if (state !== 'up') this._jumpQueued = true; return; }
-    if (action === 'special') { if (state !== 'up') this._specialQueued = true; return; }
+    this.dbg.byId.set(id || 'anon', { action, state, t: performance.now() });
+    if (action === 'jump') { if (state !== 'up') { this._jumpQueued = true; this.dbg.lastJump = performance.now(); } return; }
+    if (action === 'special') { if (state !== 'up') { this._specialQueued = true; this.dbg.lastSpecial = performance.now(); } return; }
     const m = this._holds[action];
     if (!m) return;
     const key = id || 'anon';

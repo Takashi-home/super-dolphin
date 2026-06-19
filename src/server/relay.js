@@ -41,6 +41,8 @@ export function createRelay() {
   const screens = new Set();   // SSE res（大画面）
   const phones = new Map();    // id -> SSE res（スマホ接続）
   const players = new Map();   // id -> { id, name, role }
+  const graceTimers = new Map(); // id -> 切断後に記録を消す予約（再接続でキャンセル）
+  const GRACE_MS = 15000;      // 一時切断の猶予（テザリングのブレで役割を失わない）
   let character = 'dolphin';
 
   const send = (res, obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch {} };
@@ -69,9 +71,16 @@ export function createRelay() {
       const id = url.searchParams.get('id');
       if (id) {
         phones.set(id, res);
+        const gt = graceTimers.get(id);          // 再接続：削除予約をキャンセル
+        if (gt) { clearTimeout(gt); graceTimers.delete(id); }
         const p = players.get(id);
         if (p && p.role) send(res, { type: 'assign', role: p.role, character });
-        req.on('close', () => { phones.delete(id); players.delete(id); broadcastRoster(); });
+        req.on('close', () => {
+          phones.delete(id);
+          // すぐ消さず猶予を置く。猶予内に再接続すれば役割を保持できる。
+          const t = setTimeout(() => { players.delete(id); graceTimers.delete(id); broadcastRoster(); }, GRACE_MS);
+          graceTimers.set(id, t);
+        });
       } else {
         screens.add(res);
         send(res, rosterPayload());

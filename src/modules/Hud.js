@@ -7,7 +7,7 @@ import { TIERS } from './Player.js';
  * index.html の要素を id で参照する。コールバックは constructor で受け取る。
  */
 export class Hud {
-  constructor({ onStart, onSelectCharacter, onReset }) {
+  constructor({ onStart, onSelectCharacter, onReset, onToggleDev }) {
     this.$ = (id) => document.getElementById(id);
     this.lobby = this.$('lobby');
     this.hud = this.$('hud');
@@ -30,6 +30,8 @@ export class Hud {
 
     this.startBtn.addEventListener('click', () => onStart());
     this.$('retry-btn').addEventListener('click', () => onReset());
+    this.devCheck = this.$('dev-check');
+    if (this.devCheck && onToggleDev) this.devCheck.addEventListener('change', () => onToggleDev(this.devCheck.checked));
 
     this.charButtons = [...document.querySelectorAll('[data-char]')];
     this.charButtons.forEach((b) =>
@@ -39,6 +41,8 @@ export class Hud {
     const url = `${location.origin}${location.pathname.replace(/index\.html$/, '')}controller.html`;
     this.connectUrl.textContent = url.replace(/\/\//g, '//').replace(/([^:])\/\//g, '$1/');
   }
+
+  setDev(on) { if (this.devCheck) this.devCheck.checked = on; }
 
   selectCharacter(key) {
     this.charButtons.forEach((b) => b.classList.toggle('selected', b.dataset.char === key));

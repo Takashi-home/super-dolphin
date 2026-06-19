@@ -112,6 +112,7 @@
     if (!isSecure) $('https-warn').classList.add('show');
 
     let role = null, info = null, sensorsOn = false;
+    const heldButtons = new Set();   // 押し続け中の画面ボタン（left/right/dash）を再送するため
 
     // ── 送信 ──
     // keepalive は使わない（毎フレーム送ると 64KB/同時数の制限に当たり、
@@ -126,13 +127,18 @@
     function setStatus(t, cls = '') { statusEl.textContent = t; statusEl.className = cls; }
 
     // ── 参加 ──
-    $('join-btn').addEventListener('click', () => {
-      const name = $('name-input').value.trim() || `P-${id.slice(0,4)}`;
-      fetch('/api/ctrl/join', {
+    let joined = false, myName = '';
+    function postJoin(name, silent) {
+      return fetch('/api/ctrl/join', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, name }),
-      }).then(() => setStatus('参加しました。大画面のスタートを待っています…', 'ok'))
-        .catch(() => setStatus('参加できません（同じWi-Fi？）', 'err'));
+      }).then(() => { if (!silent) setStatus('参加しました。大画面のスタートを待っています…', 'ok'); })
+        .catch(() => { if (!silent) setStatus('参加できません（同じWi-Fi？）', 'err'); });
+    }
+    $('join-btn').addEventListener('click', () => {
+      myName = $('name-input').value.trim() || `P-${id.slice(0,4)}`;
+      joined = true;
+      postJoin(myName, false);
       $('wait').classList.add('hidden');
       $('role-head').classList.remove('hidden');
     });
@@ -146,10 +152,12 @@
         else if (m.type === 'gamestate' && m.state === 'LOBBY') {
           setStatus('ロビーに戻りました', '');
         } else if (m.type === 'hello') {
-          setStatus('接続OK。なまえを入れて参加してね', 'ok');
+          // 再接続も含めて毎回届く。参加済みなら自動で再参加して役割を取り戻す。
+          if (joined) postJoin(myName, true);
+          else setStatus('接続OK。なまえを入れて参加してね', 'ok');
         }
       };
-      es.onerror = () => setStatus('接続が切れました…再接続中', 'err');
+      es.onerror = () => setStatus('接続が切れました…自動で再接続します', 'err');
     }
     connect();
 
@@ -175,8 +183,8 @@
       const holdBtn = (cls, label, sub, action) => {
         const b = document.createElement('button');
         b.className = `ctrl ${cls}`; b.innerHTML = `${label}<small>${sub}</small>`;
-        const down = (e) => { e.preventDefault(); b.classList.add('active'); send(action, 'down'); };
-        const up = (e) => { e.preventDefault(); b.classList.remove('active'); send(action, 'up'); };
+        const down = (e) => { e.preventDefault(); b.classList.add('active'); heldButtons.add(action); send(action, 'down'); };
+        const up = (e) => { e.preventDefault(); b.classList.remove('active'); heldButtons.delete(action); send(action, 'up'); };
         b.addEventListener('pointerdown', down);
         b.addEventListener('pointerup', up);
         b.addEventListener('pointercancel', up);
@@ -220,7 +228,7 @@
 
     // ── 傾き（移動）──
     // 反応を良くするため閾値を下げ、中立幅も狭める。
-    const TILT_T = 12, TILT_N = 5;
+    const TILT_T = 20, TILT_N = 9;
     const tiltState = { left: false, right: false };
     function setHold(action, on) {
       if (!info || !info.actions.includes(action)) return;
@@ -231,11 +239,16 @@
     // 取りこぼし＆固着対策：押し続けている入力を短い周期で再送し、
     // 受信側の「有効期限」を更新し続ける（再送が止まれば自動で解除される）。
     setInterval(() => {
-      if (!sensorsOn || !info) return;
-      if (tiltState.left) send('left', 'down');
-      if (tiltState.right) send('right', 'down');
-      if (typeof dashOn !== 'undefined' && dashOn) send('dash', 'down');
-    }, 220);
+      if (!info) return;
+      // センサー（傾き／振り）の保持を再送
+      if (sensorsOn) {
+        if (tiltState.left) send('left', 'down');
+        if (tiltState.right) send('right', 'down');
+        if (typeof dashOn !== 'undefined' && dashOn) send('dash', 'down');
+      }
+      // 画面ボタンの押し続けを再送（センサーON/OFFに関係なく。止まり防止）
+      for (const a of heldButtons) send(a, 'down');
+    }, 200);
     window.addEventListener('deviceorientation', (e) => {
       if (!sensorsOn || !info) return;
       const g = Math.max(-90, Math.min(90, e.gamma ?? 0));

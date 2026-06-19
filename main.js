@@ -36,16 +36,24 @@ class Game {
     this._lastLevelCoins = 0;
     this._gameover = false;
     this._checkpoint = null;    // { index, x, y } 到達した中間地点
+    this.devMode = false;       // 開発者モード：全ステージ開放
     preloadAssets();            // 任意のPNG/音声を非同期ロード（無ければプロシージャル）
 
     this.hud = new Hud({
       onStart: () => this.start(),
       onSelectCharacter: (key) => this.selectCharacter(key),
       onReset: () => this._onResultButton(),
+      onToggleDev: (on) => this.setDevMode(on),
     });
 
     this._resize();
     window.addEventListener('resize', () => this._resize());
+    // 開発者モードのショートカット（バッククォート/Dキーでトグル）
+    this._dbg = false;          // 入力デバッグ表示（I キーでトグル）
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Backquote' || (e.code === 'KeyG' && e.shiftKey)) this.setDevMode(!this.devMode);
+      if (e.code === 'KeyI') this._dbg = !this._dbg;
+    });
     this.selectCharacter('dolphin');
     this.hud.showLobby();
     this._connect();
@@ -99,6 +107,7 @@ class Game {
     this.score = 0;
     this.coins = 0;
     this._checkpoint = null;
+    this.player.tier = 0;       // 新規スタートは進化リセット
     this.worldmap.reset();
     fetch('/api/ctrl/start', {
       method: 'POST',
@@ -106,6 +115,13 @@ class Game {
       body: JSON.stringify({ character: this.character }),
     }).catch(() => {});
     this._toMap();
+  }
+
+  // 開発者モード：全ステージ開放（クリア不要でどこでも選べる）
+  setDevMode(on) {
+    this.devMode = on;
+    this.worldmap.dev = on;
+    this.hud.setDev(on);
   }
 
   _toMap() {
@@ -121,6 +137,7 @@ class Game {
       this._gameover = false;
       this.lives = START_LIVES;
       this.score = 0; this.coins = 0;
+      this.player.tier = 0;          // ゲームオーバーで進化リセット
       this.worldmap.reset();
     }
     this._toMap();                  // クリア後もマップへ（次が解放済み）
@@ -131,7 +148,7 @@ class Game {
     if (this.worldmap.update(this.input) === 'enter') {
       this.levelIndex = this.worldmap.selected;
       this._checkpoint = null;
-      this.beginPlay(false);
+      this.beginPlay(true);   // 進化状態（パワー/ファイア）を次ステージへ引き継ぐ
     }
   }
 
@@ -301,6 +318,36 @@ class Game {
       this.player.draw(ctx, this.cameraX, CHARACTERS[this.character]);
       ctx.restore();
     }
+    if (this._dbg) this._drawInputDebug(ctx);
+  }
+
+  // 入力デバッグ：どの端末から何が届いているかを実時間表示（I キーでトグル）
+  // 「左右移動とジャンプを別端末で同時操作」したとき、両方の入力が画面に
+  // 来ているかを確認する用。来ていれば緑、来ていなければ原因は送信側（センサー/通信）。
+  _drawInputDebug(ctx) {
+    const now = performance.now();
+    const i = this.input;
+    const fresh = (t, ms = 300) => now - t < ms;
+    const lines = [
+      `INPUT DEBUG (I で消す)  players:${this.players.length}`,
+      `left:${i.left ? '●' : '·'}  right:${i.right ? '●' : '·'}  dash:${i.dash ? '●' : '·'}` +
+        `  jump:${fresh(i.dbg.lastJump) ? '●' : '·'}  special:${fresh(i.dbg.lastSpecial) ? '●' : '·'}`,
+      '— 端末ごとの最終入力 —',
+    ];
+    for (const [id, d] of i.dbg.byId) {
+      lines.push(`${id}: ${d.action} ${d.state}  (${Math.round(now - d.t)}ms前)`);
+    }
+    ctx.save();
+    ctx.font = '14px monospace';
+    const w = 360, h = 18 * lines.length + 16;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    ctx.fillRect(10, 10, w, h);
+    ctx.textBaseline = 'top';
+    lines.forEach((t, idx) => {
+      ctx.fillStyle = idx <= 1 ? '#9be7ff' : '#cfe';
+      ctx.fillText(t, 20, 18 + idx * 18);
+    });
+    ctx.restore();
   }
 }
 

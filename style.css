@@ -146,3 +146,13 @@ body {
 #result-title.clear { color: #ffd600; text-shadow: 0 0 30px rgba(255,214,0,0.6); }
 #result-title.gameover { color: #ff5252; }
 #result-desc { font-size: 1.2rem; color: #e1f5fe; margin-bottom: 26px; }
+
+/* ── 開発者モードのトグル（ロビー） ── */
+.dev-toggle {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 16px; padding: 8px 16px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+  color: #b0bec5; font-size: 0.95rem; cursor: pointer; user-select: none;
+}
+.dev-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.dev-toggle input { width: 18px; height: 18px; cursor: pointer; accent-color: #ff5252; }

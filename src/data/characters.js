@@ -12,7 +12,7 @@ export const CHARACTERS = {
   orca: {
     key: 'orca',
     name: 'シャチ', emoji: '🐳', color: '#26323a', accent: '#eceff1',
-    speed: 4.0, jump: 14.5, gravity: 0.82,
+    speed: 4.0, jump: 17, gravity: 0.82,   // 到達高をイルカ相当に（届かないブロック対策）
     special: 'smash',        // 真下に急降下してブロックを破壊
     specialLabel: 'ヒップドロップ',
     theme: 'ocean',

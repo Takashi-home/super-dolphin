@@ -158,7 +158,7 @@ export class Player {
         if (this.tier >= 1) {
           if (level.breakAt(c, r)) { this.sound.break(); if (particles) particles.debris(c * T + T / 2, r * T + T / 2); continue; }
         } else {
-          level.popBrickCoin(c, r); this.sound.coin();
+          if (level.popBrickCoin(c, r)) this.sound.coin();   // 上限(10枚)に達したら鳴らさない
         }
       }
       // ？ブロックを頭突き：アイテム/コインが出る
@@ -278,9 +278,10 @@ export class Player {
     // ── 落下死（穴は救済なし）──
     if (this.y > level.height + 200) return this._die();
 
-    // ── ゴール ──
-    const gcx = level.goal.x + T / 2, gcy = level.goal.y + T / 2;
-    if (Math.abs((this.x + this.w / 2) - gcx) < T && Math.abs((this.y + this.h / 2) - gcy) < T * 1.5) {
+    // ── ゴール（本家風：旗ざおのポール位置より右まで来たら、高さ問わずクリア）──
+    // ポールを飛び越えたり上を通っても、ゴールX以降に到達すれば判定する。
+    const poleX = level.goal.x + T / 2;
+    if ((this.x + this.w / 2) >= poleX) {
       return 'goal';
     }
 

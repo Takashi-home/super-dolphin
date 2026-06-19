@@ -25,6 +25,7 @@ export class Level {
     this.items = [];
     this.spikes = new Set();
     this.breakables = new Set(); // "c,r" の生存ブロック
+    this.brickCoins = new Map(); // "c,r" -> これまで出したコイン数（上限まで）
     this.qblocks = new Map();    // "c,r" -> { used } ？ブロック
     this.bumps = new Map();      // "c,r" -> 残りフレーム（頭突きのアニメ）
     this.checkpoints = [];       // { x, y, hit }
@@ -86,10 +87,16 @@ export class Level {
     return true;
   }
 
-  // レンガを下から叩く（非進化）→ コインを1枚出す
+  // レンガを下から叩く（非進化）→ コインを1枚出す（1ブロックあたり最大10枚）
+  // 上限に達したら叩く演出だけしてコインは出さない。出せたら true を返す。
   popBrickCoin(c, r) {
     this.bumpBlock(c, r);
+    const key = `${c},${r}`;
+    const n = this.brickCoins.get(key) || 0;
+    if (n >= 10) return false;
+    this.brickCoins.set(key, n + 1);
     spawnItem(this, 'coinpop', c, r - 1);
+    return true;
   }
 
   rectCells(x, y, w, h) {
